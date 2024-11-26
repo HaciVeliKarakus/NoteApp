@@ -1,5 +1,10 @@
 package io.hvk.noteappdel.presentation
 
+import android.content.ContentValues
+import android.content.Context
+import android.net.Uri
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.hvk.noteappdel.data.Note
@@ -7,6 +12,7 @@ import io.hvk.noteappdel.data.NoteRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -40,6 +46,9 @@ class NotesViewModel(
 
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage = _toastMessage
+
+    private val _showBatchDeleteDialog = MutableStateFlow(false)
+    val showBatchDeleteDialog = _showBatchDeleteDialog.asStateFlow()
 
     fun addNote(title: String, content: String) {
         viewModelScope.launch {
@@ -191,11 +200,74 @@ class NotesViewModel(
         _showDeleteDialog.value = null
     }
 
-    private fun showToast(message: String) {
+    fun showToast(message: String) {
         _toastMessage.value = message
         viewModelScope.launch {
             delay(2000)
             _toastMessage.value = null
+        }
+    }
+
+    fun getSelectedNotesAsJson(): String {
+        return selectedNotes.value.map { note ->
+            """
+            {
+                "id": ${note.id},
+                "title": "${note.title}",
+                "content": "${note.content}",
+                "timestamp": ${note.timestamp}
+            }
+            """.trimIndent()
+        }.joinToString(",\n", "[\n", "\n]")
+    }
+
+    fun createJsonFile(context: Context): Uri? {
+        try {
+            val jsonContent = getSelectedNotesAsJson()
+            val fileName = "notes_${System.currentTimeMillis()}.json"
+            
+            val contentUri = context.contentResolver.insert(
+                MediaStore.Files.getContentUri("external"),
+                ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "application/json")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS)
+                }
+            ) ?: return null
+
+            context.contentResolver.openOutputStream(contentUri)?.use { outputStream ->
+                outputStream.write(jsonContent.toByteArray())
+            }
+
+            return contentUri
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return null
+        }
+    }
+
+    fun showBatchDeleteConfirmation() {
+        _showBatchDeleteDialog.value = true
+    }
+
+    fun dismissBatchDeleteDialog() {
+        _showBatchDeleteDialog.value = false
+    }
+
+    fun confirmBatchDelete() {
+        viewModelScope.launch {
+            try {
+                _selectedNotes.value.forEach { note ->
+                    repository.deleteNote(note)
+                }
+                _selectedNotes.value = emptySet()
+                _isSelectionMode.value = false
+                showToast("Selected notes deleted successfully")
+            } catch (e: Exception) {
+                showToast("Failed to delete selected notes: ${e.localizedMessage}")
+            } finally {
+                _showBatchDeleteDialog.value = false
+            }
         }
     }
 } 

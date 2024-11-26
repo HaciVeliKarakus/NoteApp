@@ -1,6 +1,7 @@
 package io.hvk.noteappdel
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -47,6 +48,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.NoteAdd
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Button
@@ -96,6 +98,7 @@ import io.hvk.noteappdel.presentation.NotesViewModel
 import io.hvk.noteappdel.presentation.NotesViewModelFactory
 import io.hvk.noteappdel.presentation.ThemeViewModel
 import io.hvk.noteappdel.presentation.ThemeViewModelFactory
+import io.hvk.noteappdel.presentation.components.BatchDeleteConfirmationDialog
 import io.hvk.noteappdel.presentation.components.DeleteConfirmationDialog
 import io.hvk.noteappdel.presentation.components.NoteDetailsBottomSheet
 import io.hvk.noteappdel.presentation.screens.LaunchScreen
@@ -272,7 +275,7 @@ fun NotesScreen(viewModel: NotesViewModel) {
     val selectedNotes by viewModel.selectedNotes.collectAsState()
     val showDeleteDialog by viewModel.showDeleteDialog.collectAsState()
     val toastMessage by viewModel.toastMessage.collectAsState()
-
+    val context = LocalContext.current
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -304,8 +307,33 @@ fun NotesScreen(viewModel: NotesViewModel) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            // Share Button
                             IconButton(
-                                onClick = { viewModel.deleteSelectedNotes() }
+                                onClick = {
+                                    viewModel.createJsonFile(context)?.let { uri ->
+                                        val shareIntent = Intent().apply {
+                                            action = Intent.ACTION_SEND
+                                            type = "application/json"
+                                            putExtra(Intent.EXTRA_STREAM, uri)
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        context.startActivity(Intent.createChooser(shareIntent, "Share Notes"))
+                                    } ?: run {
+                                        // Show error toast if file creation failed
+                                        viewModel.showToast("Failed to create JSON file")
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Default.Share,
+                                    contentDescription = "Share selected",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                            
+                            // Delete Button
+                            IconButton(
+                                onClick = { viewModel.showBatchDeleteConfirmation() }
                             ) {
                                 Icon(
                                     Icons.Default.Delete,
@@ -313,6 +341,8 @@ fun NotesScreen(viewModel: NotesViewModel) {
                                     tint = MaterialTheme.colorScheme.error
                                 )
                             }
+                            
+                            // Close Button
                             IconButton(
                                 onClick = { viewModel.toggleSelectionMode() }
                             ) {
@@ -571,6 +601,17 @@ fun NotesScreen(viewModel: NotesViewModel) {
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
+        }
+
+        // Batch delete confirmation dialog
+        val showBatchDeleteDialog by viewModel.showBatchDeleteDialog.collectAsState()
+
+        if (showBatchDeleteDialog) {
+            BatchDeleteConfirmationDialog(
+                count = selectedNotes.size,
+                onDismiss = { viewModel.dismissBatchDeleteDialog() },
+                onConfirm = { viewModel.confirmBatchDelete() }
+            )
         }
     }
 }
