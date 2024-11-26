@@ -429,8 +429,8 @@ fun NotesScreen(viewModel: NotesViewModel) {
             // Animated border color and rotation
             val infiniteTransition = rememberInfiniteTransition(label = "fabAnimation")
             val borderColor by infiniteTransition.animateColor(
-                initialValue = Color(0xFFFF69B4),  // Light Neon Pink
-                targetValue = Color(0xFFFF1493),   // Deep Pink
+                initialValue = Color(0xFF00FF0C),  // Light Neon Pink
+                targetValue = Color(0xFF008DFF),   // Deep Pink
                 animationSpec = infiniteRepeatable(
                     animation = tween(2000, easing = LinearEasing),
                     repeatMode = RepeatMode.Reverse
@@ -474,7 +474,7 @@ fun NotesScreen(viewModel: NotesViewModel) {
             // Rotating border
             Box(
                 modifier = Modifier
-                    .size(60.dp)
+                    .size(56.dp)
                     .rotate(rotation)
                     .border(
                         width = 2.dp,
@@ -488,11 +488,11 @@ fun NotesScreen(viewModel: NotesViewModel) {
                 onClick = { viewModel.toggleAddingNote() },
                 modifier = Modifier
                     .size(56.dp),
-                containerColor = MaterialTheme.colorScheme.primary,
+                containerColor = MaterialTheme.colorScheme.secondary,
                 contentColor = Color.White,
                 shape = CircleShape,
                 elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 0.dp,
+//                    defaultElevation = 0.dp,
                     pressedElevation = 0.dp
                 )
             ) {
