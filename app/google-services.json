@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "50261114322",
+    "project_id": "noteappdel",
+    "storage_bucket": "noteappdel.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:50261114322:android:c335881e57a58e57ec5c0b",
+        "android_client_info": {
+          "package_name": "io.hvk.noteappdel"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAT57WgfW3cxIQOVor1-8vbH35eIpnBpTs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
