@@ -40,6 +40,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.NoteAdd
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Delete
@@ -362,10 +363,10 @@ fun NotesScreen(viewModel: NotesViewModel) {
             onClick = { viewModel.toggleAddingNote() },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 24.dp, bottom = 80.dp)
+                .padding(24.dp)
                 .size(56.dp),
             containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = Color.Black,
+            contentColor = Color.White,
             shape = CircleShape,
             elevation = FloatingActionButtonDefaults.elevation(
                 defaultElevation = 6.dp,
@@ -373,7 +374,7 @@ fun NotesScreen(viewModel: NotesViewModel) {
             )
         ) {
             Icon(
-                Icons.Default.NoteAdd,
+                Icons.AutoMirrored.Filled.NoteAdd,
                 contentDescription = "Add note",
                 modifier = Modifier.size(24.dp)
             )
@@ -813,8 +814,8 @@ fun NeonCircleButton(
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "buttonAnimation")
     val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.5f,
-        targetValue = 1f,
+        initialValue = 0.1f,
+        targetValue = 0.5f,
         animationSpec = infiniteRepeatable(
             animation = tween(1000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
@@ -825,7 +826,7 @@ fun NeonCircleButton(
     val color = if (isSelected) {
         MaterialTheme.colorScheme.primary
     } else {
-        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+       Color.White
     }
 
     val scale by animateFloatAsState(
