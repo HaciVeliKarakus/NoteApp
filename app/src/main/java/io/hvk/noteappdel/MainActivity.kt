@@ -68,6 +68,7 @@ import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSiz
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -102,6 +103,7 @@ import io.hvk.noteappdel.presentation.screens.LoginScreen
 import io.hvk.noteappdel.presentation.screens.SettingsScreen
 import io.hvk.noteappdel.presentation.screens.StatusScreen
 import io.hvk.noteappdel.ui.theme.NoteAppDelTheme
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -259,6 +261,7 @@ fun MainScreen(viewModel: NotesViewModel) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NotesScreen(viewModel: NotesViewModel) {
     val notes by viewModel.notes.collectAsState()
@@ -335,49 +338,140 @@ fun NotesScreen(viewModel: NotesViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalItemSpacing = 16.dp
             ) {
-                items(notes) { note ->
-                    NoteCard(
-                        note = note,
-                        isSelected = selectedNotes.contains(note),
-                        onDelete = { viewModel.showDeleteConfirmation(note) },
-                        onEdit = { viewModel.selectNote(note) },
-                        onClick = {
-                            if (isSelectionMode) {
-                                viewModel.toggleNoteSelection(note)
-                            } else {
-                                viewModel.showNoteDetails(note)
+                items(
+                    items = notes,
+                    key = { note -> note.id }
+                ) { note ->
+                    var isVisible by remember { mutableStateOf(false) }
+                    
+                    LaunchedEffect(Unit) {
+                        delay(300) // Small delay before animation starts
+                        isVisible = true
+                    }
+
+                    AnimatedVisibility(
+                        visible = isVisible,
+                        enter = fadeIn(
+                            animationSpec = tween(
+                                durationMillis = 300,
+                                easing = LinearEasing
+                            )
+                        ) + slideInVertically(
+                            animationSpec = tween(
+                                durationMillis = 300,
+                                easing = LinearEasing
+                            ),
+                            initialOffsetY = { it / 2 }
+                        ),
+                        modifier = Modifier.animateItemPlacement(
+                            animationSpec = tween(durationMillis = 300)
+                        )
+                    ) {
+                        NoteCard(
+                            note = note,
+                            isSelected = selectedNotes.contains(note),
+                            onDelete = { viewModel.showDeleteConfirmation(note) },
+                            onEdit = { viewModel.selectNote(note) },
+                            onClick = {
+                                if (isSelectionMode) {
+                                    viewModel.toggleNoteSelection(note)
+                                } else {
+                                    viewModel.showNoteDetails(note)
+                                }
+                            },
+                            onLongClick = {
+                                if (!isSelectionMode) {
+                                    viewModel.toggleSelectionMode()
+                                    viewModel.toggleNoteSelection(note)
+                                }
                             }
-                        },
-                        onLongClick = {
-                            if (!isSelectionMode) {
-                                viewModel.toggleSelectionMode()
-                                viewModel.toggleNoteSelection(note)
-                            }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
 
-        FloatingActionButton(
-            onClick = { viewModel.toggleAddingNote() },
+        Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(24.dp)
-                .size(56.dp),
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = Color.White,
-            shape = CircleShape,
-            elevation = FloatingActionButtonDefaults.elevation(
-                defaultElevation = 6.dp,
-                pressedElevation = 8.dp
-            )
         ) {
-            Icon(
-                Icons.AutoMirrored.Filled.NoteAdd,
-                contentDescription = "Add note",
-                modifier = Modifier.size(24.dp)
+            // Animated border color and rotation
+            val infiniteTransition = rememberInfiniteTransition(label = "fabAnimation")
+            val borderColor by infiniteTransition.animateColor(
+                initialValue = Color(0xFFFF69B4),  // Light Neon Pink
+                targetValue = Color(0xFFFF1493),   // Deep Pink
+                animationSpec = infiniteRepeatable(
+                    animation = tween(2000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "fabBorderColor"
             )
+            
+            val rotation by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 360f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(3000, easing = LinearEasing)
+                ),
+                label = "fabRotation"
+            )
+
+            // Glow effect
+            val glowAlpha by infiniteTransition.animateFloat(
+                initialValue = 0.2f,
+                targetValue = 0.5f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "fabGlowAlpha"
+            )
+
+            // Outer glow layers
+            repeat(3) { layer ->
+                Box(
+                    modifier = Modifier
+                        .size(64.dp - (layer * 2).dp)
+                        .align(Alignment.Center)
+                        .background(
+                            color = borderColor.copy(alpha = glowAlpha / (layer + 1)),
+                            shape = CircleShape
+                        )
+                )
+            }
+
+            // Rotating border
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .rotate(rotation)
+                    .border(
+                        width = 2.dp,
+                        color = borderColor,
+                        shape = CircleShape
+                    )
+            )
+
+            // FAB
+            FloatingActionButton(
+                onClick = { viewModel.toggleAddingNote() },
+                modifier = Modifier
+                    .size(56.dp),
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White,
+                shape = CircleShape,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp
+                )
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.NoteAdd,
+                    contentDescription = "Add note",
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
 
         AnimatedVisibility(

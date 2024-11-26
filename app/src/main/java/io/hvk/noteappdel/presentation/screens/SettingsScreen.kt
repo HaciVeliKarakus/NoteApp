@@ -112,7 +112,7 @@ fun SettingsScreen(
                             },
                             enabled = !isGeneratingNotes
                         ) {
-                            Text(if (isGeneratingNotes) "Generating..." else "Generate")
+                            Text("ok")
                         }
                     }
                 }
